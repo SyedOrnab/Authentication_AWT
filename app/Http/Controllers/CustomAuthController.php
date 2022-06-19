@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Student; 
 use Hash;
+use Session;
 class CustomAuthController extends Controller
 {
     public function login()
@@ -52,9 +53,32 @@ class CustomAuthController extends Controller
         $student = Student::where('email','=', $request->email)->first();
             if($student)
             {
-                
+                if(Hash::check($request->password, $student->password))
+                {
+                    $request->session()->put('loginId', $student->id);
+                    return redirect('dashboard');
+                }else{
+                    return back()->with('fail', 'password is incorrect');
+                }
             }else{
                 return back()->with('fail', 'Not Found');
             }
+    }
+
+    public function dashboard(){
+        
+        $data = array();
+        if(Session::has('loginId')){
+            $data = Student::where('id','=', Session::get('loginId'))->first();
+        }
+
+        return view('dashboard',compact('data'));
+    }
+
+    public function logoutStudent(){
+        if(Session::has('loginId')){
+            Session::pull('loginId');
+            return redirect('login');
+        }
     }
 }
